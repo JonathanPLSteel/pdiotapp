@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape
+            android:layout_width="match_parent"
+            android:shape="rectangle">
+            <gradient
+                android:angle="45"
+                android:centerColor="#F0AE4C"
+                android:endColor="#E04E66"
+                android:startColor="#03A9F4"
+                android:type="linear" /> <!-- Can be 'linear', 'radial', or 'sweep' -->
+<!--            <corners android:radius="8dp" /> &lt;!&ndash; Optional: rounded corners &ndash;&gt;-->
+        </shape>
+    </item>
+<!--    <item>-->
+<!--        <shape-->
+<!--            android:shape="rectangle">-->
+<!--            <gradient-->
+<!--                android:angle="135"-->
+<!--                android:endColor="#D68AE6"-->
+<!--                android:startColor="#5EB3EE"-->
+<!--                android:type="linear" /> &lt;!&ndash; Can be 'linear', 'radial', or 'sweep' &ndash;&gt;-->
+<!--            <corners android:radius="8dp" /> &lt;!&ndash; Optional: rounded corners &ndash;&gt;-->
+<!--        </shape>-->
+<!--    </item>-->
+</layer-list>
