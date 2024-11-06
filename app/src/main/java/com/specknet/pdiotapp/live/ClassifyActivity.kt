@@ -33,7 +33,6 @@ class ClassifyActivity : AppCompatActivity() {
         6 to "descending_stairs"
     )
 
-    private val targets = arrayOf("walking", "running", "sitting", "standing")
     private val handler = Handler(Looper.getMainLooper());
     private var isGeneratingData = false;
 
@@ -57,6 +56,7 @@ class ClassifyActivity : AppCompatActivity() {
         Log.d("TensorFlow Lite", "Input Shape: ${inputShape.contentToString()}, Data Type: $inputDataType");
         Log.d("TensorFlow Lite", "Output Shape: ${outputShape.contentToString()}, Data Type: $outputDataType")
 
+        // Some fake input data pulled from normal_walking data.
         val jsonData = """
             [[0.020751953, -0.60894775, 0.03289795, -2.328125, -22.78125, 1.296875],
  [0.025878906, -0.6045532, 0.024597168, 15.96875, -5.484375, -4.625],
@@ -109,21 +109,27 @@ class ClassifyActivity : AppCompatActivity() {
  [0.0017089844, -0.9414673, 0.1449585, -1.421875, 0.203125, 4.90625],
  [-0.22143555, -1.0982056, 0.385437, 2.890625, -1.484375, 7.09375]]"""
 
+        // Convert [50,6] window into [1,50,6]
         val inputArray = arrayOf(parseJsonToFloatArray(jsonData));
 
+        // Initialize the output array [1,7] (7 classes)
         val outputArray = Array(1) { FloatArray(7) }
 
+        // Run the input data through the model
         tflite.run(inputArray, outputArray)
 
         Log.d("TensorFlow Lite", "Output Array: ${outputArray.contentDeepToString()}")
 
+        // Get the index of the class with the highest probability
         val predictedClass = outputArray[0].indices.maxByOrNull { outputArray[0][it] };
 
         Log.d("TensorFlow Lite", "Predicted Class: ${classes[predictedClass]}")
 
-        classifyButton.setOnClickListener {
-            resultTextView.text = targets.random();
-        }
+        resultTextView.text = classes[predictedClass];
+
+//        classifyButton.setOnClickListener {
+//            resultTextView.text = targets.random();
+//        }
 
         startGeneratingFakeData();
     }
