@@ -60,6 +60,7 @@ class ClassifyActivity : AppCompatActivity() {
     private lateinit var thingyOutputData: StringBuilder
 
     private lateinit var respeckAccel: TextView
+    private lateinit var respeckWindows: TextView
     private lateinit var thingyAccel: TextView
 
     val filterTestRespeck = IntentFilter(Constants.ACTION_RESPECK_LIVE_BROADCAST)
@@ -79,10 +80,19 @@ class ClassifyActivity : AppCompatActivity() {
     private var isGeneratingData = false;
 
     private fun updateRespeckData(liveData: RESpeckLiveData) {
-        val output = liveData.accelX.toString() + "," + liveData.accelY + "," + liveData.accelZ + ","
+        val output = "[" + liveData.accelX.toString() + "," + liveData.accelY + "," + liveData.accelZ + "]"
 
         respeckOutputData.append(output)
         Log.d(TAG, "updateRespeckData: appended to respeckoutputdata = " + output)
+
+        if (respeckOutputData.length >= 100) {
+            println(respeckOutputData)
+            runOnUiThread {
+                respeckWindows.text =
+                    getString(R.string.respeck_windows, respeckOutputData.length.floorDiv(100))
+            }
+        }
+
 
 
         // update UI thread
@@ -99,6 +109,7 @@ class ClassifyActivity : AppCompatActivity() {
         classifyButton = findViewById(R.id.classify_button)
         fakeDataTextView = findViewById(R.id.fake_data_text_view)
         respeckAccel = findViewById(R.id.respeck_accel)
+        respeckWindows = findViewById(R.id.respeck_windows)
         thingyAccel = findViewById(R.id.thingy_accel)
 
         tflite = Interpreter(loadModelFile());
