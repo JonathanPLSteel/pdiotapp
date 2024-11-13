@@ -12,55 +12,103 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+        <!--        <Button-->
+        <!--            android:id="@+id/classify_button"-->
+        <!--            android:layout_width="200dp"-->
+        <!--            android:layout_height="wrap_content"-->
+        <!--            android:layout_marginTop="29dp"-->
+        <!--            android:background="@drawable/classify_button_background"-->
+        <!--            android:text="Classify Data"-->
+        <!--            android:textColor="#FFFFFF"-->
+        <!--            android:textStyle="bold"-->
+        <!--            app:layout_constraintEnd_toEndOf="parent"-->
+        <!--            app:layout_constraintStart_toStartOf="parent"-->
+        <!--            app:layout_constraintTop_toBottomOf="@+id/result_text_view" />-->
+
         <TextView
-            android:id="@+id/result_text_view"
+            android:id="@+id/activity_information_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="84dp"
-            android:layout_marginEnd="2dp"
+            android:layout_marginTop="64dp"
             android:padding="8dp"
-            android:text="Result will appear here"
+            android:text="Your current activity is..."
             android:textAlignment="center"
-            android:textSize="18sp"
-            app:layout_constraintEnd_toEndOf="@+id/classify_button"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <Button
-            android:id="@+id/classify_button"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="29dp"
-            android:background="@drawable/classify_button_background"
-            android:text="Classify Data"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/result_text_view" />
-
-        <TextView
-            android:id="@+id/fake_data_text_view"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="57dp"
-            android:layout_marginTop="228dp"
-            android:layout_marginEnd="57dp"
-            android:paddingTop="16dp"
-            android:text="Fake Data - Accel X: 0.00, Y: 0.00, Z: 0.00, Gyro X: 0.00, Y: 0.00, Z: 0.00"
             android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/activity_result_text_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="107dp"
+            android:padding="8dp"
+            android:text="Result will appear here"
+            android:textAlignment="center"
+            android:textSize="18sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/respiratory_information_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="20dp"
+            android:layout_marginTop="24dp"
+            android:padding="8dp"
+            android:text="Respiratory status:"
+            android:textAlignment="center"
+            android:textSize="16sp"
+            app:layout_constraintStart_toStartOf="@+id/activity_result_text_view"
+            app:layout_constraintTop_toBottomOf="@+id/activity_result_text_view" />
+
+        <TextView
+            android:id="@+id/respiratory_result_text_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="Result will appear here"
+            android:textAlignment="center"
+            android:textSize="18sp"
+            app:layout_constraintStart_toStartOf="@+id/activity_result_text_view"
+            app:layout_constraintTop_toBottomOf="@+id/respiratory_information_text" />
+
+        <TextView
+            android:id="@+id/patience_warning_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="Please be patient..."
+            android:textAlignment="center"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toTopOf="@+id/refresh_info_text"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <TextView
+            android:id="@+id/refresh_info_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="23dp"
+            android:padding="8dp"
+            android:text="Classifications refresh every few seconds"
+            android:textAlignment="center"
+            android:textSize="14sp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
 
         <LinearLayout
             android:id="@+id/thingy_live_data"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:layout_marginBottom="88dp"
+            android:layout_marginTop="18dp"
             android:orientation="vertical"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="@+id/respeck_live_data">
+            app:layout_constraintStart_toStartOf="@+id/respeck_live_data"
+            app:layout_constraintTop_toBottomOf="@+id/respeck_live_data">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -81,11 +129,11 @@
             android:id="@+id/respeck_live_data"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="43dp"
+            android:layout_marginTop="274dp"
             android:orientation="vertical"
-            app:layout_constraintBottom_toTopOf="@+id/thingy_live_data"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent">
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
 
             <TextView
                 android:layout_width="wrap_content"
