@@ -92,20 +92,6 @@ class ClassifyActivity : AppCompatActivity() {
         respeckOutputData.append(output)
         Log.d(TAG, "updateRespeckData: appended to respeckoutputdata = " + output)
         println(respeckOutputData)
-//        if (respeckOutputData.length == 100) {
-//            jsonString[window] = respeckOutputData
-//        }
-
-//        if (respeckOutputData.length >= 100) {
-//            println(respeckOutputData)
-//            jsonString = respeckOutputData.toString()
-//            var mlInput = parseJsonToFloatArray2(jsonString)
-//            runOnUiThread {
-//                respeckWindows.text =
-//                    getString(R.string.respeck_windows, respeckOutputData.length.floorDiv(100))
-//            }
-//            respeckOutputData.setLength(0)
-//        }
 
         // update UI thread
         runOnUiThread {
@@ -114,13 +100,9 @@ class ClassifyActivity : AppCompatActivity() {
         respeckOutputData.append(", ")
     }
     private fun updateThingyData(liveData: ThingyLiveData) {
-        val output = liveData.phoneTimestamp.toString() + "," +
-                    liveData.accelX + "," + liveData.accelY + "," + liveData.accelZ + "," +
-                    liveData.gyro.x + "," + liveData.gyro.y + "," + liveData.gyro.z + "," +
-                    liveData.mag.x + "," + liveData.mag.y + "," + liveData.mag.z + "\n"
-
-            thingyOutputData.append(output)
-            Log.d(TAG, "updateThingyData: appended to thingyOutputData = " + output)
+        val output = "[" + liveData.accelX.toString() + "," + liveData.accelY + "," + liveData.accelZ + "]"
+        thingyOutputData.append(output)
+        Log.d(TAG, "updateThingyData: appended to thingyOutputData = " + output)
         // update UI thread
         runOnUiThread {
             thingyAccel.text = getString(R.string.thingy_accel, liveData.accelX, liveData.accelY, liveData.accelZ)
@@ -152,42 +134,53 @@ class ClassifyActivity : AppCompatActivity() {
                 if (action == Constants.ACTION_RESPECK_LIVE_BROADCAST) {
 
                     val liveData = intent.getSerializableExtra(Constants.RESPECK_LIVE_DATA) as RESpeckLiveData
+                    //val tliveData = intent.getSerializableExtra(Constants.THINGY_LIVE_DATA) as ThingyLiveData
                     Log.d("Live", "onReceive: liveData = " + liveData)
 
                     updateRespeckData(liveData)
+//                    if (outerArray.size == 50) {
+//                        println(outerArray)
+//                        val outputArray = Array(1) { FloatArray(11) }
+//                        val inputArray: Array<FloatArray> = outerArray.map { it.toFloatArray() }.toTypedArray()
+//                        println(inputArray)
+//                        println(inputArray.size)
+//                        // Run the input data through the model
+//                        tflite.run(inputArray, outputArray)
+//
+//                        Log.d("TensorFlow Lite", "Output Array: ${outputArray.contentDeepToString()}")
+//
+//                        // Get the index of the class with the highest probability
+//                        val predictedClass = outputArray[0].indices.maxByOrNull { outputArray[0][it] };
+//
+//                        Log.d("TensorFlow Lite", "Predicted Class: ${classes[predictedClass]}")
+//
+//                        resultTextView.text = classes[predictedClass];
+//                        runOnUiThread {
+//                            respeckWindows.text =
+//                                getString(
+//                                    R.string.respeck_windows,
+//                                    outerArray.size.floorDiv(50)
+//                                )
+//                        }
+//                        outerArray.clear()
+//                    }
 
-                    if (outerArray.size == 50) {
-                        //println(respeckOutputData)
-//                        var jsonString = respeckOutputData.toString()
-//                        var jsonStringArray = "[" + jsonString + "]"
-//                        var mlinput = parseJsonToFloatArray(jsonStringArray)
-                            // Initialize the output array [1,11] (11 classes)
-                        println(outerArray)
-                            val outputArray = Array(1) { FloatArray(11) }
-                            val inputArray: Array<FloatArray> = outerArray.map { it.toFloatArray() }.toTypedArray()
-                        println(inputArray)
-                        println(inputArray.size)
-                            // Run the input data through the model
-                            tflite.run(inputArray, outputArray)
 
-                            Log.d("TensorFlow Lite", "Output Array: ${outputArray.contentDeepToString()}")
+                }
 
-                            // Get the index of the class with the highest probability
-                            val predictedClass = outputArray[0].indices.maxByOrNull { outputArray[0][it] };
+            }
+        }
+        thingyReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
 
-                            Log.d("TensorFlow Lite", "Predicted Class: ${classes[predictedClass]}")
+                val action = intent.action
 
-                            resultTextView.text = classes[predictedClass];
-                            runOnUiThread {
-                                respeckWindows.text =
-                                    getString(
-                                        R.string.respeck_windows,
-                                        outerArray.size.floorDiv(50)
-                                    )
-                            }
-                            outerArray.clear()
-                        }
+                if (action == Constants.ACTION_THINGY_BROADCAST) {
 
+                    val liveData = intent.getSerializableExtra(Constants.THINGY_LIVE_DATA) as ThingyLiveData
+                    Log.d("Live", "onReceive: thingyLiveData = " + liveData)
+
+                    updateThingyData(liveData)
 
                 }
 
@@ -202,6 +195,12 @@ class ClassifyActivity : AppCompatActivity() {
         looperRespeck = handlerThreadRespeck.looper
         val handlerRespeck = Handler(looperRespeck)
         this.registerReceiver(respeckReceiver, filterTestRespeck, null, handlerRespeck)
+
+        val thingyHandlerThread = HandlerThread("bgProcThreadThingy")
+        thingyHandlerThread.start()
+        looperThingy = thingyHandlerThread.looper
+        val thingyHandler = Handler(looperThingy)
+        this.registerReceiver(thingyReceiver, filterTestThingy, null, thingyHandler)
 
 
         val inputShape = tflite.getInputTensor(0).shape();
