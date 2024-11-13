@@ -1,27 +1,70 @@
 package com.specknet.pdiotapp.live
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.os.Handler
+import android.os.HandlerThread
 import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.TextView
 import android.widget.Button
+import com.github.mikephil.charting.charts.LineChart
+import com.github.mikephil.charting.data.LineData
+import com.github.mikephil.charting.data.LineDataSet
 import com.specknet.pdiotapp.R
+import com.specknet.pdiotapp.utils.Constants
+import com.specknet.pdiotapp.utils.RESpeckLiveData
 import org.tensorflow.lite.Interpreter
 import java.io.FileInputStream
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import kotlin.random.Random
 import org.json.JSONArray
+import java.lang.StringBuilder
 
 class ClassifyActivity : AppCompatActivity() {
-
+    private val TAG = "ClassifyingActivity"
     // Define variables for the model and live data here
     private lateinit var resultTextView: TextView
     private lateinit var classifyButton: Button
     private lateinit var fakeDataTextView: TextView
     private lateinit var tflite: Interpreter
+
+    // global graph variables
+    lateinit var dataSet_res_accel_x: LineDataSet
+    lateinit var dataSet_res_accel_y: LineDataSet
+    lateinit var dataSet_res_accel_z: LineDataSet
+
+    lateinit var dataSet_thingy_accel_x: LineDataSet
+    lateinit var dataSet_thingy_accel_y: LineDataSet
+    lateinit var dataSet_thingy_accel_z: LineDataSet
+
+    lateinit var allRespeckData: LineData
+
+    lateinit var allThingyData: LineData
+
+    lateinit var respeckChart: LineChart
+    lateinit var thingyChart: LineChart
+
+    // global broadcast receiver so we can unregister it
+    lateinit var respeckReceiver: BroadcastReceiver
+    lateinit var thingyReceiver: BroadcastReceiver
+    lateinit var looperRespeck: Looper
+    lateinit var looperThingy: Looper
+
+    private lateinit var respeckOutputData: StringBuilder
+    private lateinit var thingyOutputData: StringBuilder
+
+    private lateinit var respeckAccel: TextView
+    private lateinit var respeckWindows: TextView
+    private lateinit var thingyAccel: TextView
+
+    val filterTestRespeck = IntentFilter(Constants.ACTION_RESPECK_LIVE_BROADCAST)
+    val filterTestThingy = IntentFilter(Constants.ACTION_THINGY_BROADCAST)
 
     private val classes = mapOf(
         0 to "ascending_stairs",
@@ -36,16 +79,70 @@ class ClassifyActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper());
     private var isGeneratingData = false;
 
+    private fun updateRespeckData(liveData: RESpeckLiveData) {
+        val output = "[" + liveData.accelX.toString() + "," + liveData.accelY + "," + liveData.accelZ + "]"
+
+        respeckOutputData.append(output)
+        Log.d(TAG, "updateRespeckData: appended to respeckoutputdata = " + output)
+
+        if (respeckOutputData.length >= 100) {
+            println(respeckOutputData)
+            runOnUiThread {
+                respeckWindows.text =
+                    getString(R.string.respeck_windows, respeckOutputData.length.floorDiv(100))
+            }
+        }
+
+
+
+        // update UI thread
+        runOnUiThread {
+            respeckAccel.text = getString(R.string.respeck_accel, liveData.accelX, liveData.accelY, liveData.accelZ)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_classify)
-
         // Initialize views
         resultTextView = findViewById(R.id.result_text_view)
         classifyButton = findViewById(R.id.classify_button)
         fakeDataTextView = findViewById(R.id.fake_data_text_view)
+        respeckAccel = findViewById(R.id.respeck_accel)
+        respeckWindows = findViewById(R.id.respeck_windows)
+        thingyAccel = findViewById(R.id.thingy_accel)
 
         tflite = Interpreter(loadModelFile());
+
+        respeckOutputData = StringBuilder()
+        thingyOutputData = StringBuilder()
+
+        respeckReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+
+                val action = intent.action
+
+                if (action == Constants.ACTION_RESPECK_LIVE_BROADCAST) {
+
+                    val liveData = intent.getSerializableExtra(Constants.RESPECK_LIVE_DATA) as RESpeckLiveData
+                    Log.d("Live", "onReceive: liveData = " + liveData)
+
+                    updateRespeckData(liveData)
+
+                }
+
+            }
+        }
+
+
+
+        // register receiver on another thread
+        val handlerThreadRespeck = HandlerThread("bgThreadRespeckLive")
+        handlerThreadRespeck.start()
+        looperRespeck = handlerThreadRespeck.looper
+        val handlerRespeck = Handler(looperRespeck)
+        this.registerReceiver(respeckReceiver, filterTestRespeck, null, handlerRespeck)
+
 
         val inputShape = tflite.getInputTensor(0).shape();
         val inputDataType = tflite.getInputTensor(0).dataType();

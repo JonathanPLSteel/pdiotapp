@@ -47,6 +47,7 @@
     <string name="respeck_name">RESpeck</string>
 
     <string name="respeck_accel">Accel = (%1$.3f, %2$.3f, %3$.3f)</string>
+    <string name="respeck_windows">Number of windows: %d</string>
     <string name="respeck_gyro">Gyro = (%1$.3f, %2$.3f, %3$.3f)</string>
 
     <string name="thingy_accel">Accel = (%1$.3f, %2$.3f, %3$.3f)</string>
