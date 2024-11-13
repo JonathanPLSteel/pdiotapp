@@ -18,6 +18,7 @@ import com.github.mikephil.charting.data.LineDataSet
 import com.specknet.pdiotapp.R
 import com.specknet.pdiotapp.utils.Constants
 import com.specknet.pdiotapp.utils.RESpeckLiveData
+import com.specknet.pdiotapp.utils.ThingyLiveData
 import org.tensorflow.lite.Interpreter
 import java.io.FileInputStream
 import java.nio.MappedByteBuffer
@@ -62,18 +63,23 @@ class ClassifyActivity : AppCompatActivity() {
     private lateinit var respeckAccel: TextView
     private lateinit var respeckWindows: TextView
     private lateinit var thingyAccel: TextView
+    private lateinit var outerArray: MutableList<Array<Float>>
 
     val filterTestRespeck = IntentFilter(Constants.ACTION_RESPECK_LIVE_BROADCAST)
     val filterTestThingy = IntentFilter(Constants.ACTION_THINGY_BROADCAST)
 
     private val classes = mapOf(
         0 to "ascending_stairs",
-        1 to "shuffle_walking",
-        2 to "sitting_standing",
-        3 to "misc_movement",
-        4 to "normal_walking",
-        5 to "lying_down",
-        6 to "descending_stairs"
+        1 to "descending_stairs",
+        2 to "lying_back",
+        3 to "lying_left",
+        4 to "lying_right",
+        5 to "lying_stomach",
+        6 to "misc_movement",
+        7 to "normal_walking",
+        8 to "running",
+        9 to "shuffle_walking",
+        10 to "sitting_standing"
     )
 
     private val handler = Handler(Looper.getMainLooper());
@@ -81,23 +87,43 @@ class ClassifyActivity : AppCompatActivity() {
 
     private fun updateRespeckData(liveData: RESpeckLiveData) {
         val output = "[" + liveData.accelX.toString() + "," + liveData.accelY + "," + liveData.accelZ + "]"
-
+        val innerArray = arrayOf(liveData.accelX, liveData.accelY, liveData.accelZ)
+        outerArray.add(innerArray)
         respeckOutputData.append(output)
         Log.d(TAG, "updateRespeckData: appended to respeckoutputdata = " + output)
+        println(respeckOutputData)
+//        if (respeckOutputData.length == 100) {
+//            jsonString[window] = respeckOutputData
+//        }
 
-        if (respeckOutputData.length >= 100) {
-            println(respeckOutputData)
-            runOnUiThread {
-                respeckWindows.text =
-                    getString(R.string.respeck_windows, respeckOutputData.length.floorDiv(100))
-            }
-        }
-
-
+//        if (respeckOutputData.length >= 100) {
+//            println(respeckOutputData)
+//            jsonString = respeckOutputData.toString()
+//            var mlInput = parseJsonToFloatArray2(jsonString)
+//            runOnUiThread {
+//                respeckWindows.text =
+//                    getString(R.string.respeck_windows, respeckOutputData.length.floorDiv(100))
+//            }
+//            respeckOutputData.setLength(0)
+//        }
 
         // update UI thread
         runOnUiThread {
             respeckAccel.text = getString(R.string.respeck_accel, liveData.accelX, liveData.accelY, liveData.accelZ)
+        }
+        respeckOutputData.append(", ")
+    }
+    private fun updateThingyData(liveData: ThingyLiveData) {
+        val output = liveData.phoneTimestamp.toString() + "," +
+                    liveData.accelX + "," + liveData.accelY + "," + liveData.accelZ + "," +
+                    liveData.gyro.x + "," + liveData.gyro.y + "," + liveData.gyro.z + "," +
+                    liveData.mag.x + "," + liveData.mag.y + "," + liveData.mag.z + "\n"
+
+            thingyOutputData.append(output)
+            Log.d(TAG, "updateThingyData: appended to thingyOutputData = " + output)
+        // update UI thread
+        runOnUiThread {
+            thingyAccel.text = getString(R.string.thingy_accel, liveData.accelX, liveData.accelY, liveData.accelZ)
         }
     }
 
@@ -111,6 +137,7 @@ class ClassifyActivity : AppCompatActivity() {
         respeckAccel = findViewById(R.id.respeck_accel)
         respeckWindows = findViewById(R.id.respeck_windows)
         thingyAccel = findViewById(R.id.thingy_accel)
+        outerArray = mutableListOf()
 
         tflite = Interpreter(loadModelFile());
 
@@ -128,6 +155,39 @@ class ClassifyActivity : AppCompatActivity() {
                     Log.d("Live", "onReceive: liveData = " + liveData)
 
                     updateRespeckData(liveData)
+
+                    if (outerArray.size == 50) {
+                        //println(respeckOutputData)
+//                        var jsonString = respeckOutputData.toString()
+//                        var jsonStringArray = "[" + jsonString + "]"
+//                        var mlinput = parseJsonToFloatArray(jsonStringArray)
+                            // Initialize the output array [1,11] (11 classes)
+                        println(outerArray)
+                            val outputArray = Array(1) { FloatArray(11) }
+                            val inputArray: Array<FloatArray> = outerArray.map { it.toFloatArray() }.toTypedArray()
+                        println(inputArray)
+                        println(inputArray.size)
+                            // Run the input data through the model
+                            tflite.run(inputArray, outputArray)
+
+                            Log.d("TensorFlow Lite", "Output Array: ${outputArray.contentDeepToString()}")
+
+                            // Get the index of the class with the highest probability
+                            val predictedClass = outputArray[0].indices.maxByOrNull { outputArray[0][it] };
+
+                            Log.d("TensorFlow Lite", "Predicted Class: ${classes[predictedClass]}")
+
+                            resultTextView.text = classes[predictedClass];
+                            runOnUiThread {
+                                respeckWindows.text =
+                                    getString(
+                                        R.string.respeck_windows,
+                                        outerArray.size.floorDiv(50)
+                                    )
+                            }
+                            outerArray.clear()
+                        }
+
 
                 }
 
@@ -155,74 +215,74 @@ class ClassifyActivity : AppCompatActivity() {
 
         // Some fake input data pulled from normal_walking data.
         val jsonData = """
-            [[0.020751953, -0.60894775, 0.03289795, -2.328125, -22.78125, 1.296875],
- [0.025878906, -0.6045532, 0.024597168, 15.96875, -5.484375, -4.625],
- [0.068359375, -0.76031494, 0.10223389, -0.625, -6.75, -2.578125],
- [0.005126953, -0.8442993, 0.17108154, 4.9375, -2.09375, -5.34375],
- [-0.056884766, -0.911438, 0.20794678, -0.953125, -9.0625, -8.234375],
- [-0.104003906, -1.0249634, 0.2543335, 5.359375, -3.328125, -11.1875],
- [-0.26708984, -1.2605591, 0.24700928, -3.859375, 0.734375, -14.4375],
- [-0.2512207, -1.4243774, 0.09588623, -4.03125, -3.578125, -20.609375],
- [0.03540039, -1.666565, -0.14141846, -17.78125, -25.3125, -18.5],
- [-0.08276367, -1.6121216, -0.12677002, 3.375, 31.25, 0.890625],
- [0.033447266, -0.8882446, -0.1987915, -9.125, 16.9375, -27.265625],
- [0.18676758, -0.87164307, -0.13531494, 5.6875, 15.125, -2.53125],
- [0.025878906, -0.93341064, 0.03656006, 1.234375, 12.59375, 7.640625],
- [-0.28076172, -0.69415283, -0.054992676, -7.53125, 14.765625, 2.109375],
- [-0.083984375, -0.5911255, -0.031555176, 0.828125, 13.0625, -2.125],
- [-0.08129883, -0.7334595, -0.00079345703, -7.328125, 3.703125, 4.78125],
- [-0.057373047, -0.75372314, 0.0692749, 4.6875, 1.6875, 6.203125],
- [-0.17480469, -0.8179321, 0.11907959, -7.375, -3.5, 9.59375],
- [-0.22094727, -0.85040283, 0.18572998, 3.390625, 5.53125, 8.53125],
- [-0.25073242, -0.9692993, 0.13348389, -4.015625, 3.1875, 8.203125],
- [-0.13232422, -1.2559204, 0.2592163, 7.15625, 6.59375, 1.53125],
- [-0.26245117, -1.3877563, 0.418396, -12.234375, -0.734375, 9.5625],
- [-0.34155273, -1.6113892, -0.22589111, -47.4375, -34.6875, -5.953125],
- [0.5703125, -1.567688, -0.0071411133, 37.34375, 17.484375, -7.28125],
- [0.12817383, -0.89801025, -0.17388916, -35.515625, -6.578125, 15.578125],
- [-0.14282227, -0.8569946, -0.00079345703, 32.15625, 3.75, -4.8125],
- [0.12475586, -1.0010376, 0.10760498, -22.765625, -21.46875, 1.0],
- [-0.12573242, -0.5864868, -0.101867676, -14.453125, -4.640625, 0.90625],
- [0.0146484375, -0.56573486, 0.06951904, 15.703125, 9.234375, -0.21875],
- [0.088378906, -0.77911377, 0.14202881, 4.3125, -4.640625, 3.65625],
- [-0.048583984, -0.8045044, 0.112976074, 15.515625, -1.640625, 0.0],
- [0.026855469, -0.8897095, 0.25115967, 9.140625, -3.453125, -0.6875],
- [-0.111328125, -0.8689575, 0.1798706, -0.609375, -2.796875, -1.171875],
- [-0.16210938, -0.958313, 0.24871826, -0.71875, 0.484375, -8.046875],
- [-0.13500977, -1.0579224, 0.22332764, 2.03125, -5.109375, -10.6875],
- [-0.20654297, -1.2857056, 0.38031006, 4.890625, 5.09375, -12.3125],
- [-0.31274414, -1.2896118, 0.27874756, -10.765625, 4.84375, -15.296875],
- [0.1237793, -1.4907837, -0.16583252, -37.46875, -4.390625, -19.359375],
- [0.07763672, -1.378479, -0.39996338, -5.8125, -2.453125, 7.234375],
- [-0.13793945, -0.9209595, -0.16925049, 42.75, 24.6875, 4.078125],
- [-0.091796875, -1.1836548, 0.21746826, 0.234375, 2.3125, -2.9375],
- [0.064697266, -0.8826294, -0.0032348633, -0.03125, 6.234375, 4.328125],
- [-0.22802734, -0.66656494, 0.0770874, 2.796875, 12.53125, 13.046875],
- [-0.19506836, -0.52593994, -0.0064086914, -15.671875, 0.40625, 3.46875],
- [-0.0126953125, -0.6790161, 0.03363037, 16.03125, 8.359375, 5.3125],
- [-0.19458008, -0.8796997, 0.10345459, -0.9375, 0.78125, 11.546875],
- [-0.25708008, -0.87335205, 0.19500732, 4.40625, 9.140625, 2.734375],
- [-0.13183594, -0.9385376, 0.20697021, -8.421875, -0.234375, 0.953125],
- [0.0017089844, -0.9414673, 0.1449585, -1.421875, 0.203125, 4.90625],
- [-0.22143555, -1.0982056, 0.385437, 2.890625, -1.484375, 7.09375]]"""
+            [[0.020751953, -0.60894775, 0.03289795],
+ [0.025878906, -0.6045532, 0.024597168],
+ [0.068359375, -0.76031494, 0.10223389],
+ [0.005126953, -0.8442993, 0.17108154],
+ [-0.056884766, -0.911438, 0.20794678],
+ [-0.104003906, -1.0249634, 0.2543335],
+ [-0.26708984, -1.2605591, 0.24700928],
+ [-0.2512207, -1.4243774, 0.09588623],
+ [0.03540039, -1.666565, -0.14141846],
+ [-0.08276367, -1.6121216, -0.12677002],
+ [0.033447266, -0.8882446, -0.1987915],
+ [0.18676758, -0.87164307, -0.13531494],
+ [0.025878906, -0.93341064, 0.03656006],
+ [-0.28076172, -0.69415283, -0.054992676],
+ [-0.083984375, -0.5911255, -0.031555176],
+ [-0.08129883, -0.7334595, -0.00079345703],
+ [-0.057373047, -0.75372314, 0.0692749],
+ [-0.17480469, -0.8179321, 0.11907959],
+ [-0.22094727, -0.85040283, 0.18572998],
+ [-0.25073242, -0.9692993, 0.13348389],
+ [-0.13232422, -1.2559204, 0.2592163],
+ [-0.26245117, -1.3877563, 0.418396],
+ [-0.34155273, -1.6113892, -0.22589111],
+ [0.5703125, -1.567688, -0.0071411133],
+ [0.12817383, -0.89801025, -0.17388916],
+ [-0.14282227, -0.8569946, -0.00079345703],
+ [0.12475586, -1.0010376, 0.10760498],
+ [-0.12573242, -0.5864868, -0.101867676],
+ [0.0146484375, -0.56573486, 0.06951904],
+ [0.088378906, -0.77911377, 0.14202881],
+ [-0.048583984, -0.8045044, 0.112976074],
+ [0.026855469, -0.8897095, 0.25115967],
+ [-0.111328125, -0.8689575, 0.1798706],
+ [-0.16210938, -0.958313, 0.24871826],
+ [-0.13500977, -1.0579224, 0.22332764],
+ [-0.20654297, -1.2857056, 0.38031006],
+ [-0.31274414, -1.2896118, 0.27874756],
+ [0.1237793, -1.4907837, -0.16583252],
+ [0.07763672, -1.378479, -0.39996338],
+ [-0.13793945, -0.9209595, -0.16925049],
+ [-0.091796875, -1.1836548, 0.21746826],
+ [0.064697266, -0.8826294, -0.0032348633],
+ [-0.22802734, -0.66656494, 0.0770874],
+ [-0.19506836, -0.52593994, -0.0064086914],
+ [-0.0126953125, -0.6790161, 0.03363037],
+ [-0.19458008, -0.8796997, 0.10345459],
+ [-0.25708008, -0.87335205, 0.19500732],
+ [-0.13183594, -0.9385376, 0.20697021],
+ [0.0017089844, -0.9414673, 0.1449585],
+ [-0.22143555, -1.0982056, 0.385437]]"""
 
         // Convert [50,6] window into [1,50,6]
         val inputArray = arrayOf(parseJsonToFloatArray(jsonData));
 
         // Initialize the output array [1,7] (7 classes)
-        val outputArray = Array(1) { FloatArray(7) }
+        val outputArray = Array(1) { FloatArray(11) }
 
-        // Run the input data through the model
-        tflite.run(inputArray, outputArray)
-
-        Log.d("TensorFlow Lite", "Output Array: ${outputArray.contentDeepToString()}")
-
-        // Get the index of the class with the highest probability
-        val predictedClass = outputArray[0].indices.maxByOrNull { outputArray[0][it] };
-
-        Log.d("TensorFlow Lite", "Predicted Class: ${classes[predictedClass]}")
-
-        resultTextView.text = classes[predictedClass];
+//        // Run the input data through the model
+//        tflite.run(inputArray, outputArray)
+//
+//        Log.d("TensorFlow Lite", "Output Array: ${outputArray.contentDeepToString()}")
+//
+//        // Get the index of the class with the highest probability
+//        val predictedClass = outputArray[0].indices.maxByOrNull { outputArray[0][it] };
+//
+//        Log.d("TensorFlow Lite", "Predicted Class: ${classes[predictedClass]}")
+//
+//        resultTextView.text = classes[predictedClass];
 
 //        classifyButton.setOnClickListener {
 //            resultTextView.text = targets.random();
@@ -234,7 +294,7 @@ class ClassifyActivity : AppCompatActivity() {
     // Load the TensorFlow Lite model from the assets directory as a MappedByteBuffer
     private fun loadModelFile(): MappedByteBuffer {
         // Open the file descriptor for the model file in the assets folder
-        val fileDescriptor = assets.openFd("model.tflite")
+        val fileDescriptor = assets.openFd("respeck-model.tflite")
 
         // Create a FileInputStream to read the file using the file descriptor
         val inputStream = FileInputStream(fileDescriptor.fileDescriptor)
@@ -262,6 +322,20 @@ class ClassifyActivity : AppCompatActivity() {
                 innerArray.getDouble(j).toFloat()  // Convert each element to Float
             }
         }
+    }
+    fun parseJsonToFloatArray2(jsonData: String): Array<FloatArray> {
+        val jsonArray = JSONArray(jsonData)
+        val floatArray = Array(jsonArray.length()) { FloatArray(3) } // Assuming 50 rows, each with 6 values
+
+        for (i in 0 until jsonArray.length()) {
+            val innerArray = jsonArray.getJSONArray(i)
+            for (j in 0 until innerArray.length()) {
+                floatArray[i][j] = innerArray.getDouble(j).toFloat()  // Convert to Float
+            }
+        }
+
+        // Wrap it into a new array to get [1, 50, 6] format
+        return arrayOf(*floatArray)
     }
 
     private fun startGeneratingFakeData() {
