@@ -12,55 +12,52 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+        <Chronometer
+            android:id="@+id/ch_t"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="62sp"
+            app:layout_constraintBottom_toTopOf="@+id/result_text_view"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.473"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.0" />
+
         <TextView
             android:id="@+id/result_text_view"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="84dp"
-            android:layout_marginEnd="2dp"
+            android:layout_marginTop="108dp"
             android:padding="8dp"
             android:text="Result will appear here"
             android:textAlignment="center"
             android:textSize="18sp"
-            app:layout_constraintEnd_toEndOf="@+id/classify_button"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <Button
-            android:id="@+id/classify_button"
-            android:layout_width="200dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="29dp"
-            android:background="@drawable/classify_button_background"
-            android:text="Classify Data"
-            android:textColor="#FFFFFF"
-            android:textStyle="bold"
+        <ImageView
+            android:id="@+id/myImageView"
+            android:layout_width="337dp"
+            android:layout_height="311dp"
+            android:layout_centerInParent="true"
+            android:layout_marginTop="32dp"
+            android:contentDescription="Exercise Png"
+            android:src="@drawable/exerpics"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/result_text_view" />
 
-        <TextView
-            android:id="@+id/fake_data_text_view"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="57dp"
-            android:layout_marginTop="228dp"
-            android:layout_marginEnd="57dp"
-            android:paddingTop="16dp"
-            android:text="Fake Data - Accel X: 0.00, Y: 0.00, Z: 0.00, Gyro X: 0.00, Y: 0.00, Z: 0.00"
-            android:textSize="16sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
         <LinearLayout
             android:id="@+id/thingy_live_data"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginBottom="88dp"
+            android:layout_width="169dp"
+            android:layout_height="67dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
             android:orientation="vertical"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="@+id/respeck_live_data">
+            app:layout_constraintEnd_toEndOf="parent">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -79,12 +76,12 @@
 
         <LinearLayout
             android:id="@+id/respeck_live_data"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="43dp"
+            android:layout_width="169dp"
+            android:layout_height="67dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginBottom="16dp"
             android:orientation="vertical"
-            app:layout_constraintBottom_toTopOf="@+id/thingy_live_data"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent">
 
             <TextView
@@ -100,15 +97,9 @@
                 android:layout_marginTop="5dp"
                 android:text="Accel = " />
 
-            <TextView
-                android:id="@+id/respeck_windows"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
-                android:text="Number of windows:" />
-
 
         </LinearLayout>
+
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

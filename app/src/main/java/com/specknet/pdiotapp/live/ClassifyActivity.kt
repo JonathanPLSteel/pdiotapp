@@ -8,10 +8,12 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.TextView
 import android.widget.Button
+import android.widget.Chronometer
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
@@ -31,8 +33,8 @@ class ClassifyActivity : AppCompatActivity() {
     private val TAG = "ClassifyingActivity"
     // Define variables for the model and live data here
     private lateinit var resultTextView: TextView
-    private lateinit var classifyButton: Button
-    private lateinit var fakeDataTextView: TextView
+    private lateinit var chronometer: Chronometer
+//    private lateinit var fakeDataTextView: TextView
     private lateinit var tflite: Interpreter
 
     // global graph variables
@@ -114,17 +116,18 @@ class ClassifyActivity : AppCompatActivity() {
         setContentView(R.layout.activity_classify)
         // Initialize views
         resultTextView = findViewById(R.id.result_text_view)
-        classifyButton = findViewById(R.id.classify_button)
-        fakeDataTextView = findViewById(R.id.fake_data_text_view)
         respeckAccel = findViewById(R.id.respeck_accel)
-        respeckWindows = findViewById(R.id.respeck_windows)
         thingyAccel = findViewById(R.id.thingy_accel)
+        chronometer = findViewById(R.id.ch_t)
         outerArray = mutableListOf()
 
         tflite = Interpreter(loadModelFile());
 
         respeckOutputData = StringBuilder()
         thingyOutputData = StringBuilder()
+
+        chronometer.setBase(SystemClock.elapsedRealtime());
+        chronometer.start();
 
         respeckReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
@@ -287,7 +290,7 @@ class ClassifyActivity : AppCompatActivity() {
 //            resultTextView.text = targets.random();
 //        }
 
-        startGeneratingFakeData();
+        //startGeneratingFakeData();
     }
 
     // Load the TensorFlow Lite model from the assets directory as a MappedByteBuffer
@@ -337,42 +340,42 @@ class ClassifyActivity : AppCompatActivity() {
         return arrayOf(*floatArray)
     }
 
-    private fun startGeneratingFakeData() {
-        isGeneratingData = true;
-        handler.post(fakeDataRunnable);
-    }
+//    private fun startGeneratingFakeData() {
+//        isGeneratingData = true;
+//        handler.post(fakeDataRunnable);
+//    }
 
-    private val fakeDataRunnable = object : Runnable {
-        override fun run() {
-            if (isGeneratingData) {
-                // Generate random fake data for accelerometer (accel_x, accel_y, accel_z)
-                val accelX = Random.nextFloat() * 20 - 10  // Random float between -10 and +10
-                val accelY = Random.nextFloat() * 20 - 10
-                val accelZ = Random.nextFloat() * 20 - 10
-
-                // Generate random fake data for gyroscope (gyro_x, gyro_y, gyro_z)
-                val gyroX = Random.nextFloat() * 200 - 100  // Random float between -100 and +100
-                val gyroY = Random.nextFloat() * 200 - 100
-                val gyroZ = Random.nextFloat() * 200 - 100
-
-                // Display the fake data (for experimentation purposes)
-                fakeDataTextView.text = """
-                    Accel - X: %.2f, Y: %.2f, Z: %.2f
-                    Gyro  - X: %.2f, Y: %.2f, Z: %.2f
-                """.trimIndent().format(accelX, accelY, accelZ, gyroX, gyroY, gyroZ)
-
-                // Schedule the next update
-                handler.postDelayed(this, 100) // Generate fake data every second
-            }
-            }
-    }
+//    private val fakeDataRunnable = object : Runnable {
+//        override fun run() {
+//            if (isGeneratingData) {
+//                // Generate random fake data for accelerometer (accel_x, accel_y, accel_z)
+//                val accelX = Random.nextFloat() * 20 - 10  // Random float between -10 and +10
+//                val accelY = Random.nextFloat() * 20 - 10
+//                val accelZ = Random.nextFloat() * 20 - 10
+//
+//                // Generate random fake data for gyroscope (gyro_x, gyro_y, gyro_z)
+//                val gyroX = Random.nextFloat() * 200 - 100  // Random float between -100 and +100
+//                val gyroY = Random.nextFloat() * 200 - 100
+//                val gyroZ = Random.nextFloat() * 200 - 100
+//
+//                // Display the fake data (for experimentation purposes)
+//                fakeDataTextView.text = """
+//                    Accel - X: %.2f, Y: %.2f, Z: %.2f
+//                    Gyro  - X: %.2f, Y: %.2f, Z: %.2f
+//                """.trimIndent().format(accelX, accelY, accelZ, gyroX, gyroY, gyroZ)
+//
+//                // Schedule the next update
+//                handler.postDelayed(this, 100) // Generate fake data every second
+//            }
+//            }
+//    }
 
     override fun onDestroy() {
         super.onDestroy()
 
         // Stop generating data
         isGeneratingData = false
-        handler.removeCallbacks(fakeDataRunnable)
+        //handler.removeCallbacks(fakeDataRunnable)
 
         // Release model resources if needed
         tflite.close();
