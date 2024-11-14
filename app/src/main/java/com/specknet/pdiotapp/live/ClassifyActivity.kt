@@ -215,7 +215,7 @@ class ClassifyActivity : AppCompatActivity() {
         Log.d("TensorFlow Lite", "Input Shape: ${inputShape.contentToString()}, Data Type: $inputDataType");
         Log.d("TensorFlow Lite", "Output Shape: ${outputShape.contentToString()}, Data Type: $outputDataType")
 
-        // Some fake input data pulled from normal_walking data.
+        // Some fake input data pulled from normal_walking data
         val jsonData = """
             [[0.020751953, -0.60894775, 0.03289795],
  [0.025878906, -0.6045532, 0.024597168],
