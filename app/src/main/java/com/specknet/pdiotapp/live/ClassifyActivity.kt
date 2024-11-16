@@ -226,8 +226,6 @@ class ClassifyActivity : AppCompatActivity() {
         val predictedActivityClassIndex = activityOutputArray[0].indices.maxByOrNull { activityOutputArray[0][it] };
         val predictedActivity = activityClasses[predictedActivityClassIndex];
         val currentTimestamp = java.sql.Timestamp(System.currentTimeMillis())
-        val activityOutput = currentTimestamp.toString() + "," + predictedActivity +"\n"
-        activityHistory.append(activityOutput)
 
         Log.d(TAG, "Predicted Activity: $predictedActivity")
 
@@ -237,7 +235,8 @@ class ClassifyActivity : AppCompatActivity() {
             Log.d(TAG, "Stationary activity so attempting to predict respiratory...")
 
             val respiratoryInputArray = arrayOf(respiratoryWindowBuffer.toTypedArray());
-            //Log.d(TAG, "Input Array Shape: ${respiratoryInputArray.size},${respiratoryInputArray[0].size},${respiratoryInputArray[0][0].size}")
+            if (respiratoryInputArray.isEmpty()){return}
+            Log.d(TAG, "Input Array Shape: ${respiratoryInputArray.size},${respiratoryInputArray[0].size},${respiratoryInputArray[0][0].size}")
 
             val respiratoryOutputArray = Array(1) {FloatArray(respiratoryClasses.size)}
             Log.d(TAG, "Output Array Shape: ${respiratoryOutputArray.size},${respiratoryOutputArray[0].size}")
@@ -249,6 +248,9 @@ class ClassifyActivity : AppCompatActivity() {
         }
 
         Log.d(TAG, "Predicted Respiratory: $predictedRespiratory")
+
+        val activityOutput = currentTimestamp.toString() + "," + predictedActivity +"," + predictedRespiratory + "\n"
+        activityHistory.append(activityOutput)
 
         runOnUiThread {
             activityResultTextView.text = predictedActivity ?: "Unknown Activity"
@@ -335,7 +337,7 @@ class ClassifyActivity : AppCompatActivity() {
                 Log.d(TAG, "saveRecording: filename doesn't exist")
 
                 // the header columns in here
-                dataWriter.append("Timestamp" + "," + "Recorded Activity")
+                dataWriter.append("Timestamp" + "," + "Recorded Activity" + "," + "Respiratory Condition")
                 dataWriter.newLine()
                 dataWriter.flush()
             }
