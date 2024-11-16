@@ -11,6 +11,7 @@ import android.os.Looper
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.TextView
+import android.widget.Toast
 import com.specknet.pdiotapp.R
 import com.specknet.pdiotapp.utils.Constants
 import com.specknet.pdiotapp.utils.RESpeckLiveData
@@ -20,6 +21,16 @@ import java.io.FileInputStream
 import java.nio.MappedByteBuffer
 import java.nio.channels.FileChannel
 import org.json.JSONArray
+import java.io.BufferedWriter
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.OutputStreamWriter
+import java.lang.Exception
+import java.lang.StringBuilder
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class ClassifyActivity : AppCompatActivity() {
     private val TAG = "ClassifyingActivity"
@@ -34,6 +45,9 @@ class ClassifyActivity : AppCompatActivity() {
     lateinit var thingyReceiver: BroadcastReceiver
     lateinit var looperRespeck: Looper
     lateinit var looperThingy: Looper
+
+    private lateinit var activityHistory: StringBuilder
+
 
     private lateinit var respeckAccel: TextView
     private lateinit var respeckWindows: TextView
@@ -87,6 +101,8 @@ class ClassifyActivity : AppCompatActivity() {
 
         activityClassifier = Interpreter(loadModelFile("physical-activity-model.tflite"));
         respiratoryClassifier = Interpreter(loadModelFile("respiratory-model.tflite"));
+
+        activityHistory = StringBuilder()
 
         activityWindowBuffer = mutableListOf();
         respiratoryWindowBuffer = mutableListOf();
@@ -209,6 +225,9 @@ class ClassifyActivity : AppCompatActivity() {
 
         val predictedActivityClassIndex = activityOutputArray[0].indices.maxByOrNull { activityOutputArray[0][it] };
         val predictedActivity = activityClasses[predictedActivityClassIndex];
+        val currentTimestamp = java.sql.Timestamp(System.currentTimeMillis())
+        val activityOutput = currentTimestamp.toString() + "," + predictedActivity +"\n"
+        activityHistory.append(activityOutput)
 
         Log.d(TAG, "Predicted Activity: $predictedActivity")
 
@@ -218,7 +237,7 @@ class ClassifyActivity : AppCompatActivity() {
             Log.d(TAG, "Stationary activity so attempting to predict respiratory...")
 
             val respiratoryInputArray = arrayOf(respiratoryWindowBuffer.toTypedArray());
-            Log.d(TAG, "Input Array Shape: ${respiratoryInputArray.size},${respiratoryInputArray[0].size},${respiratoryInputArray[0][0].size}")
+            //Log.d(TAG, "Input Array Shape: ${respiratoryInputArray.size},${respiratoryInputArray[0].size},${respiratoryInputArray[0][0].size}")
 
             val respiratoryOutputArray = Array(1) {FloatArray(respiratoryClasses.size)}
             Log.d(TAG, "Output Array Shape: ${respiratoryOutputArray.size},${respiratoryOutputArray[0].size}")
@@ -289,8 +308,68 @@ class ClassifyActivity : AppCompatActivity() {
         return arrayOf(*floatArray)
     }
 
+    private fun saveRecording() {
+        val currentTime = System.currentTimeMillis()
+        var formattedDate = ""
+        try {
+            formattedDate = SimpleDateFormat("dd-MM-yyyy", Locale.UK).format(Date())
+            Log.i(TAG, "saveRecording: formattedDate = " + formattedDate)
+        } catch (e: Exception) {
+            Log.i(TAG, "saveRecording: error = ${e.toString()}")
+            formattedDate = currentTime.toString()
+        }
+        val filename = "StrideWise Activity ${formattedDate}.csv" // TODO format this to human readable
+
+        val file = File(getExternalFilesDir(null), filename)
+
+        Log.d(TAG, "saveRecording: filename = " + file.toString())
+
+        val dataWriter: BufferedWriter
+
+        // Create file for current day and append header, if it doesn't exist yet
+        try {
+            val exists = file.exists()
+            dataWriter = BufferedWriter(OutputStreamWriter(FileOutputStream(file, true)))
+
+            if (!exists) {
+                Log.d(TAG, "saveRecording: filename doesn't exist")
+
+                // the header columns in here
+                dataWriter.append("Timestamp" + "," + "Recorded Activity")
+                dataWriter.newLine()
+                dataWriter.flush()
+            }
+            else {
+                Log.d(TAG, "saveRecording: filename exists")
+            }
+            if (activityHistory.isNotEmpty()) {
+                dataWriter.write(activityHistory.toString())
+                dataWriter.flush()
+
+                Log.d(TAG, "saveRecording: recording saved")
+            }
+            else {
+                Log.d(TAG, "saveRecording: no data during recording period")
+            }
+
+            dataWriter.close()
+
+            activityHistory = StringBuilder()
+
+            Toast.makeText(this, "Recording saved!", Toast.LENGTH_SHORT).show()
+        }
+        catch (e: IOException) {
+            Toast.makeText(this, "Error while saving recording!", Toast.LENGTH_SHORT).show()
+            Log.e(TAG, "saveRespeckRecording: Error while writing to the respeck file: " + e.message )
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
+        looperThingy.quit()
+        looperRespeck.quit()
+
+        saveRecording()
 
         activityClassifier.close();
         respiratoryClassifier.close();
