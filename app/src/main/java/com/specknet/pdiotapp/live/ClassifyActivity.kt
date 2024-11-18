@@ -96,7 +96,6 @@ class ClassifyActivity : AppCompatActivity() {
         activityResultTextView = findViewById(R.id.activity_result_text_view)
         respiratoryResultTextView = findViewById(R.id.respiratory_result_text_view)
         respeckAccel = findViewById(R.id.respeck_accel)
-        respeckWindows = findViewById(R.id.respeck_windows)
         thingyAccel = findViewById(R.id.thingy_accel)
 
         activityClassifier = Interpreter(loadModelFile("physical-activity-model.tflite"));
