@@ -1,32 +1,14 @@
 package com.specknet.pdiotapp
-import android.Manifest // For accessing the Manifest class
-import android.content.pm.PackageManager // For checking permissions
-import android.os.Environment // For accessing the file system
 import android.widget.ArrayAdapter // For setting up the spinner adapter
 import android.widget.Spinner // For working with Spinner views
-import androidx.core.app.ActivityCompat // For requesting permissions
-import androidx.core.content.ContextCompat // For checking permissions
 import java.io.File // For working with files
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.os.Bundle
-import android.os.Handler
-import android.os.HandlerThread
-import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import com.specknet.pdiotapp.utils.Constants
-import com.specknet.pdiotapp.utils.CountUpTimer
-import com.specknet.pdiotapp.utils.RESpeckLiveData
-import com.specknet.pdiotapp.utils.ThingyLiveData
 import java.io.*
-import java.lang.Exception
-import java.text.SimpleDateFormat
-import java.util.*
 import java.lang.StringBuilder
 
 
@@ -96,6 +78,7 @@ class HistoricActivity : AppCompatActivity() {
         Log.d(TAG, "$directoryPath")
         if (directoryPath != null && directoryPath.exists()) {
             val fileNames = directoryPath.listFiles()
+
             if (fileNames != null) {
                 // Convert the File array to a List of strings (file names or paths)
                 val files: List<String> = fileNames?.map { it.name } ?: emptyList()
@@ -107,10 +90,14 @@ class HistoricActivity : AppCompatActivity() {
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 spinner.adapter = adapter
             } else {
-                println("No files in dir")
+                Log.d(TAG, "No files in dir")
+            }
+
+            if (fileNames!=null && fileNames.isEmpty()) {
+                Toast.makeText(this, "You have no recorded data.", Toast.LENGTH_SHORT).show()
             }
         } else {
-            println("Dir doesn't exist")
+            Log.d(TAG, "Directory does not exist")
         }
 
     }
@@ -128,54 +115,90 @@ class HistoricActivity : AppCompatActivity() {
             "miscellaneous movement",
             "normal walking",
             "running",
-            "shuffle walking",
+            "shuffle walking"
+        )
+        val respiratoryConditions = listOf(
             "breathing normally",
             "coughing",
             "hyperventilating",
             "other respiratory condition"
         )
-        val tally = mutableMapOf<String, Int>().apply {
+
+        val activitiesTally = mutableMapOf<String, Int>().apply {
             activities.forEach { this[it] = 0 }
         }
+
+        val respiratoryTally = mutableMapOf<String, Int>().apply {
+            respiratoryConditions.forEach { this[it] = 0 }
+        }
+
+        Log.d(TAG, "openFile: $file")
 
         try {
             val content = readFileToString(file)
             val splitData = content.split(",") // Split the content by commas
             splitData.forEach { line ->
+
+                Log.d(TAG, "openFile: $line")
                 // Assuming each line represents an activity (or a column contains activity labels)
                 activities.forEach { activity ->
                     if (line.contains(activity, ignoreCase = true)) {
-                        // Increment the count for the activity
-                        tally[activity] = tally[activity]!! + 1
+                        activitiesTally[activity] = activitiesTally[activity]!! + 1
+                    }
+                }
+
+                respiratoryConditions.forEach { condition ->
+                    if (line.contains(condition, ignoreCase = true)) {
+                        respiratoryTally[condition] = respiratoryTally[condition]!! + 1
                     }
                 }
             }
-            Toast.makeText(this, "File content split: ${splitData.joinToString(", ")}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Read File!", Toast.LENGTH_SHORT).show()
         } catch (e: IOException) {
             e.printStackTrace()
             Toast.makeText(this, "Error reading file", Toast.LENGTH_SHORT).show()
         }
-        writeToViews(tally)
+        writeToViews(activitiesTally, respiratoryTally)
     }
 
-    private fun writeToViews(tally: MutableMap<String, Int>) {
+    private fun writeToViews(activitiesTally: MutableMap<String, Int>, respiratoryTally: MutableMap<String, Int>) {
+
+        Log.d(TAG, "writeToViews: here")
+
+        val activityPercentages = calculateActivityPercentages(activitiesTally)
+        val respiratoryPercentages = calculateActivityPercentages(respiratoryTally)
 
         runOnUiThread{
-            sitting.text = null
-            asc.text = null
-            desc.text = null
-            lb.text = null
-            ls.text = null
-            ll.text = null
-            lr.text = null
-            misc.text = null
-            walk =  findViewById(R.id.walking)
-            run =  findViewById(R.id.running)
-            shuffle =  findViewById(R.id.shuffle)
-            normal =  findViewById(R.id.normal)
-            cough =  findViewById(R.id.coughing)
-            hyper =  findViewById(R.id.hyperventilating)
-            other =  findViewById(R.id.other)
+            sitting.text = "Sitting/Standing: ${String.format("%.0f",activityPercentages["sitting/standing"])}%"
+            asc.text = "Ascending stairs: ${String.format("%.0f",activityPercentages["ascending stairs"])}%"
+            desc.text = "Descending stairs: ${String.format("%.0f",activityPercentages["descending stairs"])}%"
+            lb.text = "Lying on back: ${String.format("%.0f",activityPercentages["lying on back"])}%"
+            ls.text = "Lying on stomach: ${String.format("%.0f",activityPercentages["lying on stomach"])}%"
+            ll.text = "Lying on left: ${String.format("%.0f",activityPercentages["lying on left side"])}%"
+            lr.text = "Lying on right ${String.format("%.0f",activityPercentages["lying on right side"])}%"
+            misc.text = "Misc movements: ${String.format("%.0f",activityPercentages["miscellaneous movement"])}%"
+            walk.text = "Walking: ${String.format("%.0f",activityPercentages["walking"])}%"
+            run.text =  "Running: ${String.format("%.0f",activityPercentages["running"])}%"
+            shuffle.text =  "Shuffle walking: ${String.format("%.0f",activityPercentages["shuffle walking"])}%"
+            normal.text =  "Normal Breathing: ${String.format("%.0f",respiratoryPercentages["breathing normally"])}%"
+            cough.text =  "Coughing: ${String.format("%.0f",respiratoryPercentages["coughing"])}%"
+            hyper.text =  "Hyperventilating: ${String.format("%.0f",respiratoryPercentages["hyperventilating"])}%"
+            other.text =  "Other resp condition: ${String.format("%.0f",respiratoryPercentages["other respiratory condition"])}%"
+        }
+    }
+
+    fun calculateActivityPercentages(tallies: MutableMap<String, Int>): Map<String, Double> {
+        // Calculate the total tally
+        val totalTallies = tallies.values.sum()
+
+        // Check if the total is greater than 0 to avoid division by zero
+        if (totalTallies == 0) {
+            return tallies.mapValues { 0.0 } // Map all percentages to 0.0 if no activities were completed
+        }
+
+        // Calculate percentages for each activity
+        return tallies.mapValues { (activity, tally) ->
+            (tally.toDouble() / totalTallies) * 100
         }
     }
 
