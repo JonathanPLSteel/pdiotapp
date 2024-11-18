@@ -177,7 +177,7 @@ class HistoricActivity : AppCompatActivity() {
             ll.text = "Lying on left: ${String.format("%.0f",activityPercentages["lying on left side"])}%"
             lr.text = "Lying on right ${String.format("%.0f",activityPercentages["lying on right side"])}%"
             misc.text = "Misc movements: ${String.format("%.0f",activityPercentages["miscellaneous movement"])}%"
-            walk.text = "Walking: ${String.format("%.0f",activityPercentages["walking"])}%"
+            walk.text = "Walking: ${String.format("%.0f",activityPercentages["normal walking"])}%"
             run.text =  "Running: ${String.format("%.0f",activityPercentages["running"])}%"
             shuffle.text =  "Shuffle walking: ${String.format("%.0f",activityPercentages["shuffle walking"])}%"
             normal.text =  "Normal Breathing: ${String.format("%.0f",respiratoryPercentages["breathing normally"])}%"
