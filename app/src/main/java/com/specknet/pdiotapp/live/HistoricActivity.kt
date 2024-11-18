@@ -162,13 +162,13 @@ class HistoricActivity : AppCompatActivity() {
 
         runOnUiThread{
             sitting.text = null
-            asc =  findViewById(R.id.ascending)
-            desc =  findViewById(R.id.descending)
-            lb =  findViewById(R.id.lying_b)
-            ls =  findViewById(R.id.lying_s)
-            ll =  findViewById(R.id.lying_l)
-            lr =  findViewById(R.id.lying_r)
-            misc =  findViewById(R.id.misc)
+            asc.text = null
+            desc.text = null
+            lb.text = null
+            ls.text = null
+            ll.text = null
+            lr.text = null
+            misc.text = null
             walk =  findViewById(R.id.walking)
             run =  findViewById(R.id.running)
             shuffle =  findViewById(R.id.shuffle)
