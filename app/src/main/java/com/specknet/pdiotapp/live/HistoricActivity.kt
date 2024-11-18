@@ -117,14 +117,65 @@ class HistoricActivity : AppCompatActivity() {
 
     private fun openFile (fileName: String) {
         val file = File(getExternalFilesDir(null), fileName)
+        val activities = listOf(
+            "sitting/standing",
+            "ascending stairs",
+            "descending stairs",
+            "lying on back",
+            "lying on stomach",
+            "lying on left side",
+            "lying on right side",
+            "miscellaneous movement",
+            "normal walking",
+            "running",
+            "shuffle walking",
+            "breathing normally",
+            "coughing",
+            "hyperventilating",
+            "other respiratory condition"
+        )
+        val tally = mutableMapOf<String, Int>().apply {
+            activities.forEach { this[it] = 0 }
+        }
 
         try {
             val content = readFileToString(file)
             val splitData = content.split(",") // Split the content by commas
+            splitData.forEach { line ->
+                // Assuming each line represents an activity (or a column contains activity labels)
+                activities.forEach { activity ->
+                    if (line.contains(activity, ignoreCase = true)) {
+                        // Increment the count for the activity
+                        tally[activity] = tally[activity]!! + 1
+                    }
+                }
+            }
             Toast.makeText(this, "File content split: ${splitData.joinToString(", ")}", Toast.LENGTH_SHORT).show()
         } catch (e: IOException) {
             e.printStackTrace()
             Toast.makeText(this, "Error reading file", Toast.LENGTH_SHORT).show()
+        }
+        writeToViews(tally)
+    }
+
+    private fun writeToViews(tally: MutableMap<String, Int>) {
+
+        runOnUiThread{
+            sitting.text = null
+            asc =  findViewById(R.id.ascending)
+            desc =  findViewById(R.id.descending)
+            lb =  findViewById(R.id.lying_b)
+            ls =  findViewById(R.id.lying_s)
+            ll =  findViewById(R.id.lying_l)
+            lr =  findViewById(R.id.lying_r)
+            misc =  findViewById(R.id.misc)
+            walk =  findViewById(R.id.walking)
+            run =  findViewById(R.id.running)
+            shuffle =  findViewById(R.id.shuffle)
+            normal =  findViewById(R.id.normal)
+            cough =  findViewById(R.id.coughing)
+            hyper =  findViewById(R.id.hyperventilating)
+            other =  findViewById(R.id.other)
         }
     }
 
