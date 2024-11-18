@@ -31,6 +31,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var pairingButton: Button
     lateinit var recordButton: Button
     lateinit var classifyPageButton: Button
+    lateinit var  viewHistoricButton: Button
 
     // permissions
     lateinit var permissionAlertDialog: AlertDialog.Builder
@@ -67,6 +68,7 @@ class MainActivity : AppCompatActivity() {
         pairingButton = findViewById(R.id.ble_button)
         recordButton = findViewById(R.id.record_button)
         classifyPageButton = findViewById(R.id.classify_page_button)
+        viewHistoricButton = findViewById(R.id.view_historic_button)
 
         permissionAlertDialog = AlertDialog.Builder(this)
 
@@ -100,6 +102,11 @@ class MainActivity : AppCompatActivity() {
 
         classifyPageButton.setOnClickListener {
             val intent = Intent(this, ClassifyActivity::class.java)
+            startActivity(intent)
+        }
+
+        viewHistoricButton.setOnClickListener {
+            val intent = Intent(this, HistoricActivity::class.java)
             startActivity(intent)
         }
     }
