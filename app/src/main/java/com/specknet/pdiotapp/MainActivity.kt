@@ -29,7 +29,6 @@ class MainActivity : AppCompatActivity() {
     // buttons and textviews
     lateinit var liveProcessingButton: Button
     lateinit var pairingButton: Button
-    lateinit var recordButton: Button
     lateinit var classifyPageButton: Button
     lateinit var  viewHistoricButton: Button
 
@@ -66,7 +65,6 @@ class MainActivity : AppCompatActivity() {
 
         liveProcessingButton = findViewById(R.id.live_button)
         pairingButton = findViewById(R.id.ble_button)
-        recordButton = findViewById(R.id.record_button)
         classifyPageButton = findViewById(R.id.classify_page_button)
         viewHistoricButton = findViewById(R.id.view_historic_button)
 
@@ -92,11 +90,6 @@ class MainActivity : AppCompatActivity() {
 
         pairingButton.setOnClickListener {
             val intent = Intent(this, ConnectingActivity::class.java)
-            startActivity(intent)
-        }
-
-        recordButton.setOnClickListener {
-            val intent = Intent(this, RecordingActivity::class.java)
             startActivity(intent)
         }
 

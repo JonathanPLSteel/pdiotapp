@@ -9,6 +9,8 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
 import android.util.Log
+import android.view.View
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import android.widget.TextView
 import android.widget.Toast
@@ -40,6 +42,11 @@ class ClassifyActivity : AppCompatActivity() {
     private lateinit var activityClassifier: Interpreter
     private lateinit var respiratoryClassifier: Interpreter
 
+    private lateinit var respeckStatusIndicator: ImageView
+    private lateinit var thingyStatusIndicator: ImageView
+    private lateinit var activityClassifyIndicator: ImageView
+    private lateinit var respiratoryClassifyIndicator: ImageView
+
     // global broadcast receiver so we can unregister it
     lateinit var respeckReceiver: BroadcastReceiver
     lateinit var thingyReceiver: BroadcastReceiver
@@ -47,11 +54,6 @@ class ClassifyActivity : AppCompatActivity() {
     lateinit var looperThingy: Looper
 
     private lateinit var activityHistory: StringBuilder
-
-
-    private lateinit var respeckAccel: TextView
-    private lateinit var respeckWindows: TextView
-    private lateinit var thingyAccel: TextView
 
     val filterTestRespeck = IntentFilter(Constants.ACTION_RESPECK_LIVE_BROADCAST)
     val filterTestThingy = IntentFilter(Constants.ACTION_THINGY_BROADCAST)
@@ -95,8 +97,11 @@ class ClassifyActivity : AppCompatActivity() {
         // Initialize views
         activityResultTextView = findViewById(R.id.activity_result_text_view)
         respiratoryResultTextView = findViewById(R.id.respiratory_result_text_view)
-        respeckAccel = findViewById(R.id.respeck_accel)
-        thingyAccel = findViewById(R.id.thingy_accel)
+
+        respeckStatusIndicator = findViewById(R.id.respeck_status_indicator)
+        thingyStatusIndicator = findViewById(R.id.thingy_status_indicator)
+        activityClassifyIndicator = findViewById(R.id.activity_classify_indicator)
+        respiratoryClassifyIndicator = findViewById(R.id.respiratory_classify_indicator)
 
         activityClassifier = Interpreter(loadModelFile("physical-activity-model.tflite"));
         respiratoryClassifier = Interpreter(loadModelFile("respiratory-model.tflite"));
@@ -118,6 +123,9 @@ class ClassifyActivity : AppCompatActivity() {
 
                     updateRespeckData(liveData)
 
+                    updateIndicatorStatus(respeckStatusIndicator, true)
+                } else {
+                    updateIndicatorStatus(respeckStatusIndicator, false)
                 }
 
             }
@@ -133,7 +141,11 @@ class ClassifyActivity : AppCompatActivity() {
                     Log.d("Live", "onReceive: thingyLiveData = " + liveData)
 
                     updateThingyData(liveData)
+                    updateIndicatorStatus(thingyStatusIndicator, true)
+                } else {
+                    updateIndicatorStatus(thingyStatusIndicator, false)
                 }
+
             }
         }
 
@@ -153,24 +165,37 @@ class ClassifyActivity : AppCompatActivity() {
 
     }
 
+    private fun updateIndicatorStatus(indicator: ImageView, isConnected: Boolean) {
+        val backgroundResource = if (isConnected) {
+            R.drawable.status_connected // Green
+        } else {
+            R.drawable.status_disconnected // Red
+        }
+        indicator.setBackgroundResource(backgroundResource)
+    }
+
+    private fun updateClassifyIndicatorStatus(indicator: ImageView) {
+        runOnUiThread {
+            indicator.visibility = View.VISIBLE
+        }
+        // wait 1 second
+        Handler().postDelayed({
+            if (indicator != null) {
+                runOnUiThread {
+                    indicator.visibility = View.INVISIBLE
+                }
+            }
+        }, 500)
+    }
+
     private fun updateRespeckData(liveData: RESpeckLiveData) {
         val respeckData = floatArrayOf(liveData.accelX, liveData.accelY, liveData.accelZ);
         updateWindow(respeckData, null);
-
-        val output = "[" + liveData.accelX.toString() + "," + liveData.accelY + "," + liveData.accelZ + "]"
-        runOnUiThread {
-            respeckAccel.text = getString(R.string.respeck_accel, liveData.accelX, liveData.accelY, liveData.accelZ)
-        }
     }
 
     private fun updateThingyData(liveData: ThingyLiveData) {
         val thingyData = floatArrayOf(liveData.accelX, liveData.accelY, liveData.accelZ);
         updateWindow(null, thingyData);
-
-        val output = "[" + liveData.accelX.toString() + "," + liveData.accelY + "," + liveData.accelZ + "]"
-        runOnUiThread {
-            thingyAccel.text = getString(R.string.thingy_accel, liveData.accelX, liveData.accelY, liveData.accelZ)
-        }
     }
 
     private fun updateWindow(respeckData: FloatArray?, thingyData: FloatArray?) {
@@ -228,6 +253,8 @@ class ClassifyActivity : AppCompatActivity() {
 
         Log.d(TAG, "Predicted Activity: $predictedActivity")
 
+        updateClassifyIndicatorStatus(activityClassifyIndicator)
+
         var predictedRespiratory = "N/A"
 
         if (predictedActivityClassIndex in stationaryClasses) {
@@ -247,6 +274,8 @@ class ClassifyActivity : AppCompatActivity() {
         }
 
         Log.d(TAG, "Predicted Respiratory: $predictedRespiratory")
+
+        updateClassifyIndicatorStatus(respiratoryClassifyIndicator)
 
         val activityOutput = currentTimestamp.toString() + "," + predictedActivity +"," + predictedRespiratory + "\n"
         activityHistory.append(activityOutput)
