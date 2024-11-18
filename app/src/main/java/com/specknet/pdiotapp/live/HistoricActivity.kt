@@ -49,14 +49,26 @@ class HistoricActivity : AppCompatActivity() {
     private lateinit var cough: TextView
     private lateinit var hyper: TextView
     private lateinit var other: TextView
+    private lateinit var context: Context
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         Log.d(TAG, "onCreate: here")
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_historic)
-        checkAndRequestPermissions()
         setupViews()
+        populateSpinnerWithFiles(context)
+
+        dropdown.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parentView: AdapterView<*>, view: View?, position: Int, id: Long) {
+                val selectedFileName = parentView.getItemAtPosition(position) as String
+                openFile(selectedFileName)
+            }
+
+            override fun onNothingSelected(parentView: AdapterView<*>) {
+                // Handle case where nothing is selected
+            }
+        }
     }
 
     private fun setupViews() {
@@ -76,48 +88,60 @@ class HistoricActivity : AppCompatActivity() {
         cough =  findViewById(R.id.coughing)
         hyper =  findViewById(R.id.hyperventilating)
         other =  findViewById(R.id.other)
+        context = this
     }
 
-    private fun checkAndRequestPermissions() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                REQUEST_CODE_STORAGE_PERMISSION
-            )
+    private fun populateSpinnerWithFiles(context: Context) {
+        val directoryPath = context.getExternalFilesDir(null)
+        Log.d(TAG, "$directoryPath")
+        if (directoryPath != null && directoryPath.exists()) {
+            val fileNames = directoryPath.listFiles()
+            if (fileNames != null) {
+                // Convert the File array to a List of strings (file names or paths)
+                val files: List<String> = fileNames?.map { it.name } ?: emptyList()
+
+                // If you want full paths instead of just file names, you can use it.path
+                val filePaths: List<String> = fileNames?.map { it.path } ?: emptyList()
+                val spinner: Spinner = findViewById(R.id.dropdown)
+                val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, files)
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                spinner.adapter = adapter
+            } else {
+                println("No files in dir")
+            }
         } else {
-            populateSpinnerWithFiles()
+            println("Dir doesn't exist")
+        }
+
+    }
+
+    private fun openFile (fileName: String) {
+        val file = File(getExternalFilesDir(null), fileName)
+
+        try {
+            val content = readFileToString(file)
+            val splitData = content.split(",") // Split the content by commas
+            Toast.makeText(this, "File content split: ${splitData.joinToString(", ")}", Toast.LENGTH_SHORT).show()
+        } catch (e: IOException) {
+            e.printStackTrace()
+            Toast.makeText(this, "Error reading file", Toast.LENGTH_SHORT).show()
         }
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CODE_STORAGE_PERMISSION && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            populateSpinnerWithFiles()
+    private fun readFileToString(file: File): String {
+        val stringBuilder = StringBuilder()
+        try {
+            val bufferedReader = BufferedReader(InputStreamReader(file.inputStream()))
+            bufferedReader.use { reader ->
+                var line: String?
+                while (reader.readLine().also { line = it } != null) {
+                    stringBuilder.append(line).append("\n") // Add a newline after each line
+                }
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
         }
+        return stringBuilder.toString()
     }
 
-    private fun getFileNamesFromDirectory(directoryPath: String): List<String> {
-        val directory = File(directoryPath)
-        if (directory.exists() && directory.isDirectory) {
-            return directory.listFiles()?.map { it.name } ?: emptyList()
-        }
-        return emptyList()
-    }
-
-    private fun populateSpinnerWithFiles() {
-        val directoryPath = Environment.getExternalStorageDirectory().absolutePath + "/MyFolder"
-        val fileNames = getFileNamesFromDirectory(directoryPath)
-
-        val spinner: Spinner = findViewById(R.id.dropdown)
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, fileNames)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinner.adapter = adapter
-    }
 }
